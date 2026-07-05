@@ -49,5 +49,71 @@ def check_data(file_path, target_col="Fraud_Label"):
         print(col, df[col].nunique())
 
     return df
+#Creating a function now to clean the data based on the insights the check data function has provided. 
+#This function must be run and undertaken before the data is used for training and testing the model.
+#This will return a cleaned dataframe ready for the modelling stage. 
 
+
+def clean_data(df):
+    
+    # Make a copy so the original dataframe is not changed
+    df = df.copy()
+
+    print("Starting cleaning...")
+    print("Original shape:", df.shape)
+
+    # 1. Remove exact duplicate rows, if any
+    duplicate_count = df.duplicated().sum()
+    print("Duplicate rows found:", duplicate_count)
+
+    if duplicate_count > 0:
+        df = df.drop_duplicates()
+        print("Shape after removing duplicates:", df.shape)
+
+    # 2. Convert Timestamp into a proper datetime column
+    df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+
+    # 3. Check if any timestamps failed to convert
+    invalid_timestamps = df["Timestamp"].isna().sum()
+    print("Invalid timestamps:", invalid_timestamps)
+
+    if invalid_timestamps > 0:
+        df = df.dropna(subset=["Timestamp"])
+        print("Shape after removing invalid timestamps:", df.shape)
+
+    # 4. Create useful time-based features
+    df["Transaction_Hour"] = df["Timestamp"].dt.hour
+    df["Transaction_DayOfWeek"] = df["Timestamp"].dt.dayofweek
+    df["Transaction_Month"] = df["Timestamp"].dt.month
+
+    # 5. Clean text columns by removing accidental spaces
+    text_columns = df.select_dtypes(include="object").columns
+
+    for col in text_columns:
+        df[col] = df[col].str.strip()
+
+    # 6. Check target column exists
+    if "Fraud_Label" not in df.columns:
+        raise ValueError("Fraud_Label column is missing.")
+
+    # 7. Check target values
+    print("\nFraud label counts:")
+    print(df["Fraud_Label"].value_counts())
+
+    print("\nFraud label percentages:")
+    print(df["Fraud_Label"].value_counts(normalize=True))
+
+    print("\nCleaning complete.")
+    print("Final shape:", df.shape)
+
+    return df
+
+#Calling the functions to check and clean the data. The cleaned data will be used for training and testing the model.
 df = check_data("synthetic_fraud_dataset.csv")
+
+cleaned_df = clean_data(df)
+
+# Save cleaned data as a new CSV file
+cleaned_df.to_csv("cleaned_fraud_dataset.csv", index=False)
+
+print("Cleaned CSV file has been saved.")
