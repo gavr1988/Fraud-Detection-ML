@@ -350,6 +350,10 @@ def train_and_predict():
     print(classification_report(y_test, y_pred))
 
     # Predict probabilities for ROC AUC
+    # ROC AUC measures how well the model separates fraud from non-fraud cases.
+# It uses the predicted probability of fraud rather than just the final 0/1 prediction.
+# A score of 0.5 means the model is no better than random guessing, while a score of 1.0 means perfect separation.
+# This is useful for fraud detection because it shows whether the model generally gives higher fraud probabilities to actual fraud cases.
     y_pred_proba = best_model.predict_proba(X_test)[:, 1]
 
     print("\nROC AUC Score:")
