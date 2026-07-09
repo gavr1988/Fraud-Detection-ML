@@ -357,21 +357,126 @@ def train_and_predict():
 
     return best_model
 
+# ---------------------------------------------------------------------
+# MAIN PROGRAM
+# ---------------------------------------------------------------------
+# This section runs the project in order:
+# 1. Load and check the original dataset
+# 2. Clean the dataset
+# 3. Save the cleaned dataset as a new CSV file
+# 4. Train and evaluate the Decision Tree model
+# 5. Use the trained model to make predictions on sample test data
 
-
-
-
-# Calling the functions to check and clean the data.
-# The cleaned data will be used for training and testing the model.
 df = check_data("synthetic_fraud_dataset.csv")
 
 cleaned_df = clean_data(df)
 
-# Save cleaned data as a new CSV file
 cleaned_df.to_csv("cleaned_fraud_dataset.csv", index=False)
 
 print("Cleaned CSV file has been saved.")
 
-# Train and evaluate the Decision Tree model
 best_model = train_and_predict()
+# ---------------------------------------------------------------------
+# CREATE SAMPLE TEST DATA
+# ---------------------------------------------------------------------
+# This data is made up manually to test the trained model.
+# It must contain the same feature columns that were used to train the model.
+#
+# We do NOT include:
+# Fraud_Label - because this is what we want the model to predict
+# Transaction_ID - because it was dropped before training
+# User_ID - because it was used for grouping, not prediction
+# Timestamp - because we use Transaction_Hour, Transaction_DayOfWeek and Transaction_Month instead
+# Risk_Score - because it was dropped to avoid possible data leakage
 
+
+test_data = pd.DataFrame([
+    {
+        "Transaction_Amount": 25.99,
+        "Transaction_Type": "POS",
+        "Account_Balance": 7500.00,
+        "Device_Type": "Mobile",
+        "Location": "London",
+        "Merchant_Category": "Groceries",
+        "IP_Address_Flag": 0,
+        "Previous_Fraudulent_Activity": 0,
+        "Daily_Transaction_Count": 2,
+        "Avg_Transaction_Amount_7d": 30.50,
+        "Failed_Transaction_Count_7d": 0,
+        "Card_Type": "Visa",
+        "Card_Age": 120,
+        "Transaction_Distance": 5.2,
+        "Authentication_Method": "PIN",
+        "Is_Weekend": 0,
+        "Transaction_Hour": 14,
+        "Transaction_DayOfWeek": 2,
+        "Transaction_Month": 6
+    },
+    {
+        "Transaction_Amount": 950.00,
+        "Transaction_Type": "Online",
+        "Account_Balance": 1200.00,
+        "Device_Type": "Laptop",
+        "Location": "Tokyo",
+        "Merchant_Category": "Electronics",
+        "IP_Address_Flag": 1,
+        "Previous_Fraudulent_Activity": 1,
+        "Daily_Transaction_Count": 13,
+        "Avg_Transaction_Amount_7d": 450.00,
+        "Failed_Transaction_Count_7d": 4,
+        "Card_Type": "Mastercard",
+        "Card_Age": 12,
+        "Transaction_Distance": 4200.0,
+        "Authentication_Method": "Password",
+        "Is_Weekend": 1,
+        "Transaction_Hour": 3,
+        "Transaction_DayOfWeek": 6,
+        "Transaction_Month": 12
+    },
+    {
+        "Transaction_Amount": 180.00,
+        "Transaction_Type": "Bank Transfer",
+        "Account_Balance": 25000.00,
+        "Device_Type": "Tablet",
+        "Location": "New York",
+        "Merchant_Category": "Travel",
+        "IP_Address_Flag": 0,
+        "Previous_Fraudulent_Activity": 0,
+        "Daily_Transaction_Count": 7,
+        "Avg_Transaction_Amount_7d": 200.00,
+        "Failed_Transaction_Count_7d": 2,
+        "Card_Type": "Amex",
+        "Card_Age": 80,
+        "Transaction_Distance": 900.0,
+        "Authentication_Method": "OTP",
+        "Is_Weekend": 0,
+        "Transaction_Hour": 21,
+        "Transaction_DayOfWeek": 4,
+        "Transaction_Month": 9
+    }
+])
+
+test_predictions = best_model.predict(test_data)
+test_probabilities = best_model.predict_proba(test_data)[:, 1]
+
+test_data["Predicted_Fraud_Label"] = test_predictions
+test_data["Predicted_Fraud_Probability"] = test_probabilities
+
+test_data["Prediction_Text"] = test_data["Predicted_Fraud_Label"].map({
+    0: "Not Fraud",
+    1: "Fraud"
+})
+
+test_data["Predicted_Fraud_Probability_Percentage"] = (
+    test_data["Predicted_Fraud_Probability"] * 100
+).round(2)
+
+print("\nSample Test Predictions:")
+print(test_data[[
+    "Transaction_Amount",
+    "Transaction_Type",
+    "Location",
+    "Merchant_Category",
+    "Prediction_Text",
+    "Predicted_Fraud_Probability_Percentage"
+]])
