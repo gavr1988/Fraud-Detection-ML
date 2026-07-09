@@ -26,3 +26,6 @@ htmlcov/
 
 # Logs and runtime files
 *.log
+
+# Project data files
+synthetic_fraud_dataset.csv
