@@ -1,8 +1,21 @@
 import pandas as pd
 import numpy as np
 
+# Used to convert categorical/text data into numerical 0/1 columns
+from sklearn.preprocessing import OneHotEncoder
 
-import pandas as pd
+# Used to apply different preprocessing steps to numeric and categorical columns
+from sklearn.compose import ColumnTransformer
+
+# Used to combine preprocessing and model training into one workflow
+from sklearn.pipeline import Pipeline
+
+# The classification model used to predict whether a transaction is fraud or not
+from sklearn.tree import DecisionTreeClassifier
+
+# SimpleImputer is included as a safeguard in case future data contains missing values.
+# Although the current cleaned dataset has no missing values, this keeps the pipeline robust.
+from sklearn.impute import SimpleImputer
 
 #Firstly we create a function to check the data and get a better understanding of it.
 # This function will print out the first 5 rows, random 10 rows, shape, columns, info, missing values, duplicate rows, target counts and percentages, numeric summary and unique values per column.
@@ -52,6 +65,8 @@ def check_data(file_path, target_col="Fraud_Label"):
 #Creating a function now to clean the data based on the insights the check data function has provided. 
 #This function must be run and undertaken before the data is used for training and testing the model.
 #This will return a cleaned dataframe ready for the modelling stage. 
+
+#Now it is time to train the models
 
 
 def clean_data(df):
@@ -107,6 +122,9 @@ def clean_data(df):
     print("Final shape:", df.shape)
 
     return df
+
+
+
 
 #Calling the functions to check and clean the data. The cleaned data will be used for training and testing the model.
 df = check_data("synthetic_fraud_dataset.csv")
