@@ -125,15 +125,15 @@ def clean_data(df):
     return df
 
 def train_and_predict():
-    """
-    Train the ML pipeline and make predictions using the cleaned fraud dataset.
+    
+    #Train the ML pipeline and make predictions using the cleaned fraud dataset.
 
-    Loads cleaned fraud data, creates features and target,
-    uses group-aware splitting based on User_ID,
-    trains a Decision Tree Classifier,
-    tunes the model using GridSearchCV,
-    evaluates performance, and returns the best model.
-    """
+    #Loads cleaned fraud data, creates features and target,
+    #uses group-aware splitting based on User_ID,
+    #trains a Decision Tree Classifier,
+    #tunes the model using GridSearchCV,
+    #evaluates performance, and returns the best model.
+    
 
     # ---------------------------------------------------------------------
     # LOAD CLEANED DATA
@@ -176,17 +176,18 @@ def train_and_predict():
     print("\nNumber of rows:", len(df))
     print("Number of unique users:", groups.nunique())
 
-    # ---------------------------------------------------------------------
+  
     # FEATURE SET
-    # ---------------------------------------------------------------------
+    
     # These columns are dropped before training the model:
-    #
+    
     # Fraud_Label is dropped because it is the answer/target column.
     # Transaction_ID is dropped because it is a unique identifier.
     # User_ID is dropped because it is used for grouping, not prediction.
     # Timestamp is dropped because useful time features have already been created.
-    # Risk_Score is dropped because it may cause data leakage.
-    # ---------------------------------------------------------------------
+    # Risk_Score is dropped because it may cause data leakage. 
+    # Data leakage means the model has access to information during training that it would not have in a real-world scenario. This can lead to overly optimistic performance metrics and poor generalization to new data.
+  
 
     X = df.drop(columns=[
         "Fraud_Label",
@@ -225,7 +226,7 @@ def train_and_predict():
     print("Testing rows:", len(X_test))
     print("Training users:", groups_train.nunique())
     print("Testing users:", groups_test.nunique())
-
+    #the next 5 lines of code will print out the original target balance, training target balance and testing target balance to see if there is any imbalance in the data.
     print("\nOriginal target balance:")
     print(y.value_counts(normalize=True))
 
@@ -235,12 +236,11 @@ def train_and_predict():
     print("\nTesting target balance:")
     print(y_test.value_counts(normalize=True))
 
-    # ---------------------------------------------------------------------
+    
     # IDENTIFY NUMERIC AND CATEGORICAL FEATURES
-    # ---------------------------------------------------------------------
     # Decision trees can use numeric data directly.
-    # Text/category columns need to be converted into numeric columns.
-    # ---------------------------------------------------------------------
+    # Text/category columns need to be converted into numeric columns so they can be used by the model.
+
 
     numeric_features = X_train.select_dtypes(include=["int64", "float64"]).columns
     categorical_features = X_train.select_dtypes(include=["object"]).columns
@@ -251,15 +251,15 @@ def train_and_predict():
     print("\nCategorical features:")
     print(categorical_features)
 
-    # ---------------------------------------------------------------------
+    
     # PREPROCESSING
-    # ---------------------------------------------------------------------
-    # We do not need StandardScaler because decision trees do not require
-    # feature scaling.
-    #
+
+    # We do not need StandardScaler because decision trees do not require feature scaling.
+    
     # Numeric columns are passed through unchanged.
     # Categorical columns are converted into 0/1 columns using OneHotEncoder.
-    # ---------------------------------------------------------------------
+    # OneHotEncoder is set to ignore unknown categories in the test set, which prevents errors if a category appears in the test set that was not seen during training.
+    #The Reason we use OneHotEncoder is because Decision Trees can handle categorical data, but they require it to be in a numeric format. OneHotEncoder converts categorical variables into a format that can be provided to ML algorithms to do a better job in prediction.
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -268,13 +268,11 @@ def train_and_predict():
         ]
     )
 
-    # ---------------------------------------------------------------------
+    
     # MODEL PIPELINE
-    # ---------------------------------------------------------------------
     # We use DecisionTreeClassifier because this is a binary classification problem.
-    #
     # The pipeline applies preprocessing first, then trains the classifier.
-    # ---------------------------------------------------------------------
+    
 
     fraud_pipeline = Pipeline(
         steps=[
@@ -283,11 +281,10 @@ def train_and_predict():
         ]
     )
 
-    # ---------------------------------------------------------------------
+   
     # PARAMETER GRID
-    # ---------------------------------------------------------------------
     # These are the decision tree settings we want GridSearchCV to test.
-    # ---------------------------------------------------------------------
+
 
     param_grid = {
         "model__max_depth": [3, 5, 7, 10, None],
@@ -296,12 +293,10 @@ def train_and_predict():
         "model__class_weight": [None, "balanced"]
     }
 
-    # ---------------------------------------------------------------------
     # GROUP-AWARE CROSS-VALIDATION
-    # ---------------------------------------------------------------------
     # GroupKFold makes sure the same user does not appear in both the training
     # and validation part of a fold during GridSearchCV.
-    # ---------------------------------------------------------------------
+
 
     number_of_training_groups = groups_train.nunique()
 
@@ -333,9 +328,7 @@ def train_and_predict():
     print("\nBest Settings:")
     print(grid_search.best_params_)
 
-    # ---------------------------------------------------------------------
     # MODEL EVALUATION
-    # ---------------------------------------------------------------------
 
     print(f"\nTraining Accuracy: {best_model.score(X_train, y_train):.2f}")
     print(f"Testing Accuracy: {best_model.score(X_test, y_test):.2f}")
@@ -350,10 +343,7 @@ def train_and_predict():
     print(classification_report(y_test, y_pred))
 
     # Predict probabilities for ROC AUC
-    # ROC AUC measures how well the model separates fraud from non-fraud cases.
-# It uses the predicted probability of fraud rather than just the final 0/1 prediction.
-# A score of 0.5 means the model is no better than random guessing, while a score of 1.0 means perfect separation.
-# This is useful for fraud detection because it shows whether the model generally gives higher fraud probabilities to actual fraud cases.
+    
     y_pred_proba = best_model.predict_proba(X_test)[:, 1]
 
     print("\nROC AUC Score:")
@@ -380,12 +370,10 @@ cleaned_df.to_csv("cleaned_fraud_dataset.csv", index=False)
 print("Cleaned CSV file has been saved.")
 
 best_model = train_and_predict()
-# ---------------------------------------------------------------------
+
 # CREATE SAMPLE TEST DATA
-# ---------------------------------------------------------------------
 # This data is made up manually to test the trained model.
 # It must contain the same feature columns that were used to train the model.
-#
 # We do NOT include:
 # Fraud_Label - because this is what we want the model to predict
 # Transaction_ID - because it was dropped before training
